@@ -44,8 +44,9 @@ describe('mountDiscovery', () => {
     })
   })
 
-  it('rewritten auth-server metadata has issuer matching proxy URL, not upstream', async () => {
-    const fake = await startFakeUpstream('https://auth.example.com/application/o/test')
+  it('rewritten auth-server metadata preserves upstream issuer so tokens validate', async () => {
+    const upstreamIssuer = 'https://auth.example.com/application/o/test'
+    const fake = await startFakeUpstream(upstreamIssuer)
     try {
       const app = express()
       mountDiscovery(app, {
@@ -55,7 +56,8 @@ describe('mountDiscovery', () => {
       })
       const res = await supertest(app).get('/.well-known/oauth-authorization-server')
       expect(res.status).toBe(200)
-      expect(res.body.issuer).toBe('https://mcp.example.com')
+      // Preserve upstream's issuer so the token's `iss` claim matches what clients validate.
+      expect(res.body.issuer).toBe(upstreamIssuer)
       // Upstream's auth + token endpoints are preserved as-is
       expect(res.body.authorization_endpoint).toBe('https://auth.example.com/application/o/test/auth')
       expect(res.body.token_endpoint).toBe('https://auth.example.com/application/o/test/token')
@@ -73,7 +75,8 @@ describe('mountDiscovery', () => {
   })
 
   it('injects registration_endpoint when configured', async () => {
-    const fake = await startFakeUpstream('http://127.0.0.1:0')
+    const upstreamIssuer = 'https://auth.example.com/application/o/test'
+    const fake = await startFakeUpstream(upstreamIssuer)
     try {
       const app = express()
       mountDiscovery(app, {
@@ -83,7 +86,8 @@ describe('mountDiscovery', () => {
       })
       const res = await supertest(app).get('/.well-known/oauth-authorization-server')
       expect(res.status).toBe(200)
-      expect(res.body.issuer).toBe('https://mcp.example.com')
+      // Issuer remains upstream — only the registration_endpoint is added.
+      expect(res.body.issuer).toBe(upstreamIssuer)
       expect(res.body.registration_endpoint).toBe('https://mcp.example.com/oauth/register')
     } finally {
       fake.close()

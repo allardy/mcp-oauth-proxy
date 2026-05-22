@@ -27,9 +27,14 @@ export const mountDiscovery = (app: Express, opts: DiscoveryOptions) => {
     })
   })
 
-  // RFC 8414 — the proxy presents itself as the authorization server. Authorize and token endpoints
-  // remain on the upstream IdP (the client follows those URLs directly), but issuer and registration_endpoint
-  // match the proxy's URL.
+  // The proxy hosts this discovery endpoint at its own URL (resource_metadata.authorization_servers points
+  // here), but the metadata body's `issuer` is preserved AS-IS from the upstream IdP. This is deliberate:
+  // tokens are signed by the upstream and carry the upstream's `iss` claim — MCP clients (e.g. Claude.ai)
+  // verify the token's iss against the metadata's `issuer`, so they MUST match.
+  //
+  // The trade-off: we technically violate RFC 8414 §3.3's "issuer MUST match metadata URL" rule. Strict
+  // clients would reject. Empirically, Claude.ai tolerates this; if a stricter client appears we'll need
+  // to proxy the token endpoint and re-sign with our own key.
   app.get('/.well-known/oauth-authorization-server', async (_req, res) => {
     const upstream = new URL('.well-known/openid-configuration', ensureTrailingSlash(opts.issuerUrl))
     try {
@@ -40,11 +45,9 @@ export const mountDiscovery = (app: Express, opts: DiscoveryOptions) => {
       }
       const upstreamJson = (await upstreamRes.json()) as Record<string, unknown>
 
-      // Rewrite issuer + (optionally) registration_endpoint. Keep upstream's authorize/token/jwks/userinfo as-is —
-      // the client follows those directly to the upstream IdP.
+      // Preserve upstream issuer/endpoints; only add scopes + (optionally) the static-DCR registration_endpoint.
       const rewritten: Record<string, unknown> = {
         ...upstreamJson,
-        issuer: resource,
         scopes_supported: scopes,
       }
       if (opts.injectRegistrationEndpoint) {
