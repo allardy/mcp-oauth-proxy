@@ -25,6 +25,28 @@ const buildApp = (opts: {
   // CORS must run before auth so OPTIONS preflights short-circuit cleanly.
   app.use(createCorsMiddleware({ allowOrigins: opts.allowOrigins }))
 
+  // Request log — runs before auth so we can see all incoming requests including 401-bound ones.
+  app.use((req, res, next) => {
+    const start = Date.now()
+    res.on('finish', () => {
+      logger.info(
+        {
+          method: req.method,
+          path: req.path,
+          status: res.statusCode,
+          ms: Date.now() - start,
+          origin: req.header('origin'),
+          ua: req.header('user-agent'),
+          contentType: req.header('content-type'),
+          accept: req.header('accept'),
+          hasAuth: !!req.header('authorization'),
+        },
+        'request',
+      )
+    })
+    next()
+  })
+
   mountDiscovery(app, { issuerUrl: opts.issuerUrl, resourceUrl: opts.resourceUrl })
 
   const limiter = createRateLimiter({ rpm: opts.rateLimitRpm })
