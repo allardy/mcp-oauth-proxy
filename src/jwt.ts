@@ -11,6 +11,10 @@ export const createJwtVerifier = (opts: JwtVerifierOptions) => {
   const remoteJwksPromise = fetchJwksUri(configUrl).then((uri) =>
     createRemoteJWKSet(new URL(uri), { cooldownDuration: 0 }),
   )
+  // Suppress unhandled-rejection at construction time; the error surfaces properly
+  // when `verify()` is called and `await remoteJwksPromise` re-throws inside the
+  // auth middleware's try/catch, returning 401 instead of crashing the process.
+  remoteJwksPromise.catch(() => undefined)
 
   return async (token: string): Promise<JWTPayload> => {
     const jwks = await remoteJwksPromise
