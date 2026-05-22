@@ -18,8 +18,10 @@ export const createJwtVerifier = (opts: JwtVerifierOptions) => {
 
   return async (token: string): Promise<JWTPayload> => {
     const jwks = await remoteJwksPromise
+    // Accept both trailing-slash and stripped forms — Authentik issues tokens with the trailing slash,
+    // older OIDC servers strip it. jose's `issuer` field accepts an array of acceptable strings.
     const { payload } = await jwtVerify(token, jwks, {
-      issuer: opts.issuerUrl.replace(/\/$/, ''),
+      issuer: [opts.issuerUrl, opts.issuerUrl.replace(/\/$/, '')],
       audience: opts.audience,
     })
     return payload
