@@ -82,4 +82,14 @@ describe('loadConfig', () => {
     const config = loadConfig(baseEnv)
     expect(config.mcpUpstreamPath).toBeUndefined()
   })
+
+  it('parses SCOPES_SUPPORTED as a string array', () => {
+    const config = loadConfig({ ...baseEnv, SCOPES_SUPPORTED: 'openid,profile,email' })
+    expect(config.scopesSupported).toEqual(['openid', 'profile', 'email'])
+  })
+
+  it('scopesSupported defaults to undefined when SCOPES_SUPPORTED is not set', () => {
+    const config = loadConfig(baseEnv)
+    expect(config.scopesSupported).toBeUndefined()
+  })
 })

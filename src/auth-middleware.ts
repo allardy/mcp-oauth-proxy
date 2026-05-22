@@ -19,14 +19,22 @@ type AuthedRequest = Request & {
   }
 }
 
+const wwwAuthenticateFor = (reason: 'missing' | 'invalid', resourceUrl: string) => {
+  const r = resourceUrl.replace(/\/$/, '')
+  const realm = `"${r}"`
+  const errorCode = reason === 'missing' ? '"invalid_request"' : '"invalid_token"'
+  const description = reason === 'missing' ? '"Bearer token required"' : '"The access token is invalid or expired"'
+  const metadata = `"${r}/.well-known/oauth-protected-resource"`
+  return `Bearer realm=${realm}, error=${errorCode}, error_description=${description}, resource_metadata=${metadata}`
+}
+
 export const createAuthMiddleware = (opts: AuthMiddlewareOptions): RequestHandler => {
   const verify = createJwtVerifier({ issuerUrl: opts.issuerUrl, audience: opts.audience })
-  const wwwAuthenticate = `Bearer realm="${opts.resourceUrl}", resource_metadata="${opts.resourceUrl}/.well-known/oauth-protected-resource"`
 
   return async (req: AuthedRequest, res: Response, next: NextFunction) => {
     const header = req.header('authorization')
     if (!header || !header.toLowerCase().startsWith('bearer ')) {
-      res.setHeader('www-authenticate', wwwAuthenticate)
+      res.setHeader('www-authenticate', wwwAuthenticateFor('missing', opts.resourceUrl))
       res.status(401).json({ error: 'missing or malformed Authorization header' })
       return
     }
@@ -36,7 +44,7 @@ export const createAuthMiddleware = (opts: AuthMiddlewareOptions): RequestHandle
       claims = await verify(token)
     } catch (err) {
       logger.warn({ err: (err as Error).message }, 'token verification failed')
-      res.setHeader('www-authenticate', wwwAuthenticate)
+      res.setHeader('www-authenticate', wwwAuthenticateFor('invalid', opts.resourceUrl))
       res.status(401).json({ error: 'invalid token' })
       return
     }

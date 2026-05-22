@@ -22,6 +22,7 @@ const buildApp = (opts: {
   staticClientId: string | undefined
   staticClientSecret: string | undefined
   upstreamPath: string | undefined
+  scopesSupported?: string[]
 }): Express => {
   const app = express()
   app.disable('x-powered-by')
@@ -55,6 +56,7 @@ const buildApp = (opts: {
     issuerUrl: opts.issuerUrl,
     resourceUrl: opts.resourceUrl,
     injectRegistrationEndpoint: Boolean(opts.staticClientId && opts.staticClientSecret),
+    ...(opts.scopesSupported !== undefined && { scopesSupported: opts.scopesSupported }),
   })
 
   // Body parser for /oauth/register JSON payload — must come before mountRegistration.
@@ -125,6 +127,7 @@ const main = async () => {
     staticClientId: config.staticClientId,
     staticClientSecret: config.staticClientSecret,
     upstreamPath: config.mcpUpstreamPath,
+    ...(config.scopesSupported !== undefined && { scopesSupported: config.scopesSupported }),
   })
 
   const server = app.listen(config.port, () => {

@@ -8,16 +8,24 @@ OAuth bearer-token wrapper for HTTP-transport MCP servers. Resource-server only 
 
 ## How it fits
 
+The proxy advertises itself as **both** the resource server and the authorization server (RFC 8414). MCP clients (e.g. Claude.ai) discover the proxy's `/.well-known/oauth-authorization-server`, which rewrites `issuer` to match the proxy's URL. The actual `authorize` and `token` endpoints still point at the upstream IdP — clients follow those URLs directly. Token verification uses the upstream's JWKS (tokens carry `iss=upstream`; the JWT verifier is already configured with the upstream issuer URL).
+
 ```
          ┌──────────────────┐         ┌──────────────────┐
-         │   Claude.ai web  │ ─────▶  │  OIDC Provider   │
+         │   Claude.ai web  │ ──(2)──▶│  OIDC Provider   │
          │  (or any MCP     │         │  (Authentik etc) │
          │   client)        │         └──────────────────┘
          └────────┬─────────┘                  │
-                  │ Bearer <jwt>               │ issues tokens
+          (1) discovers proxy's                │ issues tokens
+              .well-known/ docs                │ JWKS
+                  │                            │
+                  │ (3) Bearer <jwt>            │
                   ▼                            │
          ┌──────────────────┐                  │
          │  mcp-oauth-proxy │◀─── JWKS ────────┘
+         │  - auth-server   │
+         │    (rewrites      │
+         │     issuer)       │
          │  - verifies JWT  │
          │  - allow-list    │
          │  - rate-limits   │
@@ -80,6 +88,7 @@ app.listen(8080)
 | `STATIC_CLIENT_ID`     | no           | OIDC providers that don't support open DCR can use this pair. The proxy hosts a `/oauth/register` endpoint that always returns these credentials to any caller, and the `oauth-authorization-server` discovery doc advertises this endpoint. Useful for Authentik, etc.           |
 | `STATIC_CLIENT_SECRET` | no           | See `STATIC_CLIENT_ID`. Both must be set together or both left unset.                                                                                                                                                                                                             |
 | `MCP_UPSTREAM_PATH`    | no           | Optional path on the upstream. All non-discovery, non-healthz, non-oauth-register requests are forwarded to `${MCP_UPSTREAM_URL}${MCP_UPSTREAM_PATH}` (or the spawned upstream URL). Use when the upstream MCP listens at a sub-path like `/mcp` but the proxy is exposed at `/`. |
+| `SCOPES_SUPPORTED`     | no           | Comma-separated list of OAuth scopes the resource server supports. Advertised in both the protected-resource and auth-server discovery docs. Defaults to `openid,profile,email,offline_access`.                                                                                   |
 
 ## Working with OIDC providers that don't support DCR
 
@@ -95,9 +104,11 @@ STATIC_CLIENT_SECRET=your-client-secret
 The proxy will:
 
 1. Host `POST /oauth/register` — returns your pre-configured credentials to any caller (no validation of the request body beyond parsing it).
-2. Inject `registration_endpoint` into the proxied `/.well-known/oauth-authorization-server` discovery doc so clients see DCR as available.
+2. Inject `registration_endpoint` into the proxy's `/.well-known/oauth-authorization-server` discovery doc (with `issuer` rewritten to the proxy's own URL) so clients see DCR as available.
 
 The upstream provider's redirect_uri whitelist still governs which callbacks are accepted at `/authorize` time, so adding only the real Claude.ai callback URL to the whitelist is the correct security boundary.
+
+**Note on issuer rewriting:** The proxy rewrites `issuer` in the `/.well-known/oauth-authorization-server` response to its own `RESOURCE_URL`. This satisfies RFC 8414's requirement that the `issuer` value matches the URL from which the metadata was fetched. The `authorize` and `token` endpoint URLs remain pointing at the upstream IdP — MCP clients follow those directly. JWT tokens still carry the upstream's `iss` claim and the proxy's JWT verifier is configured accordingly.
 
 ## Security model
 

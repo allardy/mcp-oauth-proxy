@@ -41,6 +41,8 @@ describe('createAuthMiddleware', () => {
     expect(res.headers['www-authenticate']).toMatch(
       /resource_metadata="https:\/\/mcp\.example\.com\/\.well-known\/oauth-protected-resource"/,
     )
+    expect(res.headers['www-authenticate']).toMatch(/error="invalid_request"/)
+    expect(res.headers['www-authenticate']).toMatch(/error_description=/)
   })
 
   it('rejects malformed Authorization header', async () => {
@@ -51,6 +53,16 @@ describe('createAuthMiddleware', () => {
   it('rejects an invalid token with 401', async () => {
     const res = await supertest(buildApp()).get('/protected').set('authorization', 'Bearer not.a.jwt')
     expect(res.status).toBe(401)
+  })
+
+  it('WWW-Authenticate on invalid token contains error="invalid_token" and all RFC 6750 params', async () => {
+    const res = await supertest(buildApp()).get('/protected').set('authorization', 'Bearer not.a.jwt')
+    expect(res.status).toBe(401)
+    const header = res.headers['www-authenticate'] as string
+    expect(header).toMatch(/realm=/)
+    expect(header).toMatch(/error="invalid_token"/)
+    expect(header).toMatch(/error_description=/)
+    expect(header).toMatch(/resource_metadata=/)
   })
 
   it('rejects a valid token whose sub is not in allow-list with 403', async () => {

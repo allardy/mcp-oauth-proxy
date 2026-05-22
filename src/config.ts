@@ -24,6 +24,7 @@ const envSchema = z
     STATIC_CLIENT_ID: z.string().optional(),
     STATIC_CLIENT_SECRET: z.string().optional(),
     MCP_UPSTREAM_PATH: z.string().optional(),
+    SCOPES_SUPPORTED: z.string().optional(),
   })
   .refine((env) => csv(env.ALLOW_SUBS).length + csv(env.ALLOW_EMAILS).length + csv(env.ALLOW_GROUPS).length > 0, {
     message: 'at least one of ALLOW_SUBS, ALLOW_EMAILS, ALLOW_GROUPS must be set',
@@ -55,6 +56,7 @@ export type Config = {
   staticClientId: string | undefined
   staticClientSecret: string | undefined
   mcpUpstreamPath: string | undefined
+  scopesSupported: string[] | undefined
 }
 
 export const loadConfig = (env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env): Config => {
@@ -85,5 +87,6 @@ export const loadConfig = (env: NodeJS.ProcessEnv | Record<string, string | unde
     staticClientId: parsed.STATIC_CLIENT_ID,
     staticClientSecret: parsed.STATIC_CLIENT_SECRET,
     mcpUpstreamPath: parsed.MCP_UPSTREAM_PATH,
+    scopesSupported: csv(parsed.SCOPES_SUPPORTED).length > 0 ? csv(parsed.SCOPES_SUPPORTED) : undefined,
   }
 }
