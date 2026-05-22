@@ -61,4 +61,25 @@ describe('loadConfig', () => {
     const config = loadConfig(baseEnv)
     expect(config.allowOrigins).toEqual(['https://claude.ai', 'https://claude.com'])
   })
+
+  it('accepts STATIC_CLIENT_ID + STATIC_CLIENT_SECRET pair', () => {
+    const config = loadConfig({ ...baseEnv, STATIC_CLIENT_ID: 'cid', STATIC_CLIENT_SECRET: 'csecret' })
+    expect(config.staticClientId).toBe('cid')
+    expect(config.staticClientSecret).toBe('csecret')
+  })
+
+  it('rejects mismatched STATIC_CLIENT_ID / STATIC_CLIENT_SECRET', () => {
+    expect(() => loadConfig({ ...baseEnv, STATIC_CLIENT_ID: 'cid' })).toThrow(/STATIC_CLIENT/)
+    expect(() => loadConfig({ ...baseEnv, STATIC_CLIENT_SECRET: 'csecret' })).toThrow(/STATIC_CLIENT/)
+  })
+
+  it('parses MCP_UPSTREAM_PATH', () => {
+    const config = loadConfig({ ...baseEnv, MCP_UPSTREAM_PATH: '/mcp' })
+    expect(config.mcpUpstreamPath).toBe('/mcp')
+  })
+
+  it('mcpUpstreamPath defaults to undefined', () => {
+    const config = loadConfig(baseEnv)
+    expect(config.mcpUpstreamPath).toBeUndefined()
+  })
 })

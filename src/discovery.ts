@@ -4,6 +4,9 @@ import { logger } from './logger.js'
 export type DiscoveryOptions = {
   issuerUrl: string
   resourceUrl: string
+  // When true, the proxied auth-server discovery doc is augmented with a registration_endpoint
+  // pointing at this proxy's /oauth/register. Used to fake DCR for clients that demand it.
+  injectRegistrationEndpoint: boolean
 }
 
 export const mountDiscovery = (app: Express, opts: DiscoveryOptions) => {
@@ -23,8 +26,20 @@ export const mountDiscovery = (app: Express, opts: DiscoveryOptions) => {
         res.status(502).json({ error: `upstream issuer returned ${upstreamRes.status}` })
         return
       }
-      res.setHeader('content-type', 'application/json')
       const body = await upstreamRes.text()
+      if (opts.injectRegistrationEndpoint) {
+        try {
+          const json = JSON.parse(body) as Record<string, unknown>
+          json['registration_endpoint'] = `${opts.resourceUrl.replace(/\/$/, '')}/oauth/register`
+          res.setHeader('content-type', 'application/json')
+          res.status(200).send(JSON.stringify(json))
+          return
+        } catch (err) {
+          // Fall through to passthrough if upstream body isn't valid JSON
+          logger.warn({ err }, 'upstream auth-server metadata not JSON; passing through unchanged')
+        }
+      }
+      res.setHeader('content-type', 'application/json')
       res.status(200).send(body)
     } catch (err) {
       logger.error({ err }, 'failed to proxy authorization-server metadata')

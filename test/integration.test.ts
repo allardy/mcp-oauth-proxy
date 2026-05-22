@@ -22,6 +22,9 @@ describe('mcp-oauth-proxy integration', () => {
       upstreamUrl: upstream.url,
       rateLimitRpm: 600,
       allowOrigins: [],
+      staticClientId: undefined,
+      staticClientSecret: undefined,
+      upstreamPath: undefined,
     })
   })
 

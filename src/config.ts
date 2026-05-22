@@ -21,6 +21,9 @@ const envSchema = z
     LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
     RATE_LIMIT_RPM: z.coerce.number().int().positive().default(60),
     CORS_ALLOW_ORIGINS: z.string().optional(),
+    STATIC_CLIENT_ID: z.string().optional(),
+    STATIC_CLIENT_SECRET: z.string().optional(),
+    MCP_UPSTREAM_PATH: z.string().optional(),
   })
   .refine((env) => csv(env.ALLOW_SUBS).length + csv(env.ALLOW_EMAILS).length + csv(env.ALLOW_GROUPS).length > 0, {
     message: 'at least one of ALLOW_SUBS, ALLOW_EMAILS, ALLOW_GROUPS must be set',
@@ -30,6 +33,9 @@ const envSchema = z
   })
   .refine((env) => !env.MCP_SPAWN_CMD || env.MCP_SPAWN_PORT, {
     message: 'MCP_SPAWN_PORT is required when MCP_SPAWN_CMD is set',
+  })
+  .refine((env) => Boolean(env.STATIC_CLIENT_ID) === Boolean(env.STATIC_CLIENT_SECRET), {
+    message: 'STATIC_CLIENT_ID and STATIC_CLIENT_SECRET must both be set or both unset',
   })
 
 export type Config = {
@@ -46,6 +52,9 @@ export type Config = {
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
   rateLimitRpm: number
   allowOrigins: string[]
+  staticClientId: string | undefined
+  staticClientSecret: string | undefined
+  mcpUpstreamPath: string | undefined
 }
 
 export const loadConfig = (env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env): Config => {
@@ -73,5 +82,8 @@ export const loadConfig = (env: NodeJS.ProcessEnv | Record<string, string | unde
     allowOrigins: parsed.CORS_ALLOW_ORIGINS
       ? csv(parsed.CORS_ALLOW_ORIGINS)
       : ['https://claude.ai', 'https://claude.com'],
+    staticClientId: parsed.STATIC_CLIENT_ID,
+    staticClientSecret: parsed.STATIC_CLIENT_SECRET,
+    mcpUpstreamPath: parsed.MCP_UPSTREAM_PATH,
   }
 }

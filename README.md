@@ -62,21 +62,42 @@ app.listen(8080)
 
 ## Configuration
 
-| Variable             | Required     | Description                                                                                                                     |
-| -------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| `OIDC_ISSUER_URL`    | yes          | OIDC discovery URL (anything ending in / where /.well-known/openid-configuration resolves).                                     |
-| `OIDC_AUDIENCE`      | yes          | Expected `aud` claim.                                                                                                           |
-| `RESOURCE_URL`       | yes          | This proxy's public URL. Used in the protected-resource discovery doc.                                                          |
-| `ALLOW_SUBS`         | one of these | Comma-separated allow-list of token `sub` values.                                                                               |
-| `ALLOW_EMAILS`       |              | Comma-separated allow-list of token `email` values.                                                                             |
-| `ALLOW_GROUPS`       |              | Comma-separated allow-list of token `groups` claim values.                                                                      |
-| `MCP_UPSTREAM_URL`   | xor          | Existing HTTP MCP to proxy to.                                                                                                  |
-| `MCP_SPAWN_CMD`      | xor          | Command to spawn as a child process.                                                                                            |
-| `MCP_SPAWN_PORT`     | with cmd     | Port the spawned MCP listens on.                                                                                                |
-| `PORT`               | no           | Default 8080.                                                                                                                   |
-| `LOG_LEVEL`          | no           | `trace` to `fatal`. Default `info`.                                                                                             |
-| `RATE_LIMIT_RPM`     | no           | Per-`sub` rate limit. Default 60.                                                                                               |
-| `CORS_ALLOW_ORIGINS` | no           | Comma-separated allowed browser origins for CORS. Default: `https://claude.ai,https://claude.com`. Use `*` to allow any origin. |
+| Variable               | Required     | Description                                                                                                                                                                                                                                                                       |
+| ---------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OIDC_ISSUER_URL`      | yes          | OIDC discovery URL (anything ending in / where /.well-known/openid-configuration resolves).                                                                                                                                                                                       |
+| `OIDC_AUDIENCE`        | yes          | Expected `aud` claim.                                                                                                                                                                                                                                                             |
+| `RESOURCE_URL`         | yes          | This proxy's public URL. Used in the protected-resource discovery doc.                                                                                                                                                                                                            |
+| `ALLOW_SUBS`           | one of these | Comma-separated allow-list of token `sub` values.                                                                                                                                                                                                                                 |
+| `ALLOW_EMAILS`         |              | Comma-separated allow-list of token `email` values.                                                                                                                                                                                                                               |
+| `ALLOW_GROUPS`         |              | Comma-separated allow-list of token `groups` claim values.                                                                                                                                                                                                                        |
+| `MCP_UPSTREAM_URL`     | xor          | Existing HTTP MCP to proxy to.                                                                                                                                                                                                                                                    |
+| `MCP_SPAWN_CMD`        | xor          | Command to spawn as a child process.                                                                                                                                                                                                                                              |
+| `MCP_SPAWN_PORT`       | with cmd     | Port the spawned MCP listens on.                                                                                                                                                                                                                                                  |
+| `PORT`                 | no           | Default 8080.                                                                                                                                                                                                                                                                     |
+| `LOG_LEVEL`            | no           | `trace` to `fatal`. Default `info`.                                                                                                                                                                                                                                               |
+| `RATE_LIMIT_RPM`       | no           | Per-`sub` rate limit. Default 60.                                                                                                                                                                                                                                                 |
+| `CORS_ALLOW_ORIGINS`   | no           | Comma-separated allowed browser origins for CORS. Default: `https://claude.ai,https://claude.com`. Use `*` to allow any origin.                                                                                                                                                   |
+| `STATIC_CLIENT_ID`     | no           | OIDC providers that don't support open DCR can use this pair. The proxy hosts a `/oauth/register` endpoint that always returns these credentials to any caller, and the `oauth-authorization-server` discovery doc advertises this endpoint. Useful for Authentik, etc.           |
+| `STATIC_CLIENT_SECRET` | no           | See `STATIC_CLIENT_ID`. Both must be set together or both left unset.                                                                                                                                                                                                             |
+| `MCP_UPSTREAM_PATH`    | no           | Optional path on the upstream. All non-discovery, non-healthz, non-oauth-register requests are forwarded to `${MCP_UPSTREAM_URL}${MCP_UPSTREAM_PATH}` (or the spawned upstream URL). Use when the upstream MCP listens at a sub-path like `/mcp` but the proxy is exposed at `/`. |
+
+## Working with OIDC providers that don't support DCR
+
+Some OIDC providers (including Authentik 2025.10.x) don't advertise a `registration_endpoint` in their discovery doc and don't support open Dynamic Client Registration (RFC 7591). Claude.ai's "Add custom connector" flow requires DCR — if the discovery doc doesn't advertise `registration_endpoint`, it silently gives up.
+
+**Workaround:** pre-create an OIDC application in your provider (Authentik: Applications → Providers → OAuth2/OpenID Connect), then configure the proxy with the resulting client_id and client_secret:
+
+```bash
+STATIC_CLIENT_ID=your-client-id
+STATIC_CLIENT_SECRET=your-client-secret
+```
+
+The proxy will:
+
+1. Host `POST /oauth/register` — returns your pre-configured credentials to any caller (no validation of the request body beyond parsing it).
+2. Inject `registration_endpoint` into the proxied `/.well-known/oauth-authorization-server` discovery doc so clients see DCR as available.
+
+The upstream provider's redirect_uri whitelist still governs which callbacks are accepted at `/authorize` time, so adding only the real Claude.ai callback URL to the whitelist is the correct security boundary.
 
 ## Security model
 

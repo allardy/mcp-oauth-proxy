@@ -4,6 +4,7 @@ import { createAuthMiddleware } from './auth-middleware.js'
 import { createCorsMiddleware } from './cors.js'
 import { mountDiscovery } from './discovery.js'
 import { mountProxy } from './proxy.js'
+import { mountRegistration } from './registration.js'
 import { createRateLimiter } from './rate-limit.js'
 import { spawnMcpUpstream, type SpawnedUpstream } from './spawn.js'
 import { logger } from './logger.js'
@@ -18,6 +19,9 @@ const buildApp = (opts: {
   upstreamUrl: string
   rateLimitRpm: number
   allowOrigins: string[]
+  staticClientId: string | undefined
+  staticClientSecret: string | undefined
+  upstreamPath: string | undefined
 }): Express => {
   const app = express()
   app.disable('x-powered-by')
@@ -47,7 +51,20 @@ const buildApp = (opts: {
     next()
   })
 
-  mountDiscovery(app, { issuerUrl: opts.issuerUrl, resourceUrl: opts.resourceUrl })
+  mountDiscovery(app, {
+    issuerUrl: opts.issuerUrl,
+    resourceUrl: opts.resourceUrl,
+    injectRegistrationEndpoint: Boolean(opts.staticClientId && opts.staticClientSecret),
+  })
+
+  // Body parser for /oauth/register JSON payload — must come before mountRegistration.
+  app.use(express.json())
+
+  // /oauth/register is public — needs to be reachable before any auth middleware.
+  mountRegistration(app, {
+    staticClientId: opts.staticClientId,
+    staticClientSecret: opts.staticClientSecret,
+  })
 
   const limiter = createRateLimiter({ rpm: opts.rateLimitRpm })
   const auth = createAuthMiddleware({
@@ -60,7 +77,7 @@ const buildApp = (opts: {
   })
 
   app.use((req, res, next) => {
-    if (req.path.startsWith('/.well-known/') || req.path === '/healthz') return next()
+    if (req.path.startsWith('/.well-known/') || req.path === '/healthz' || req.path === '/oauth/register') return next()
     auth(req, res, (err) => {
       if (err) return next(err)
       const sub = (req as express.Request & { auth?: { sub: string } }).auth?.sub
@@ -72,7 +89,7 @@ const buildApp = (opts: {
     })
   })
 
-  mountProxy(app, { upstreamUrl: opts.upstreamUrl })
+  mountProxy(app, { upstreamUrl: opts.upstreamUrl, upstreamPath: opts.upstreamPath })
 
   return app
 }
@@ -105,6 +122,9 @@ const main = async () => {
     upstreamUrl,
     rateLimitRpm: config.rateLimitRpm,
     allowOrigins: config.allowOrigins,
+    staticClientId: config.staticClientId,
+    staticClientSecret: config.staticClientSecret,
+    upstreamPath: config.mcpUpstreamPath,
   })
 
   const server = app.listen(config.port, () => {
