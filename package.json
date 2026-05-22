@@ -1,6 +1,6 @@
 {
   "name": "@allardy/mcp-oauth-proxy",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "OAuth bearer-token wrapper for HTTP-transport MCP servers. Resource-server only; bring your own OIDC provider.",
   "keywords": [
     "mcp",

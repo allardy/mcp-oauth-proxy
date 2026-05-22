@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from 'express'
+import express, { type Express, type Request, type Response } from 'express'
 import { logger } from './logger.js'
 
 export type RegistrationOptions = {
@@ -22,7 +22,10 @@ export const mountRegistration = (app: Express, opts: RegistrationOptions) => {
   const clientId = opts.staticClientId
   const clientSecret = opts.staticClientSecret
 
-  app.post('/oauth/register', (req: Request, res: Response) => {
+  // Body parser is mounted on this route ONLY — a global express.json() would consume the body
+  // for proxied MCP calls and leave nothing for http-proxy-3 to forward (the request stream is
+  // already drained when the proxy tries to read it).
+  app.post('/oauth/register', express.json(), (req: Request, res: Response) => {
     const body = (req.body ?? {}) as RegistrationRequest
     // Echo back the requested redirect_uris if any; otherwise return an empty array.
     // We don't enforce them — the upstream OIDC provider's redirect_uri whitelist is what actually matters at /authorize time.

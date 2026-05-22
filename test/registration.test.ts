@@ -6,7 +6,7 @@ import { mountRegistration } from '../src/registration.js'
 describe('mountRegistration (static DCR shim)', () => {
   const buildApp = (clientId: string | undefined, clientSecret: string | undefined) => {
     const app = express()
-    app.use(express.json())
+    // Body parser is now mounted by mountRegistration itself on the /oauth/register route.
     mountRegistration(app, { staticClientId: clientId, staticClientSecret: clientSecret })
     return app
   }

@@ -59,9 +59,9 @@ const buildApp = (opts: {
     ...(opts.scopesSupported !== undefined && { scopesSupported: opts.scopesSupported }),
   })
 
-  // Body parser for /oauth/register JSON payload — must come before mountRegistration.
-  app.use(express.json())
-
+  // Body parser scoped to /oauth/register ONLY. A global express.json() would consume the request
+  // body for proxied MCP calls too, leaving nothing for http-proxy-3 to forward — upstream then sees
+  // "request aborted" because the body stream is already drained.
   // /oauth/register is public — needs to be reachable before any auth middleware.
   mountRegistration(app, {
     staticClientId: opts.staticClientId,
