@@ -1,6 +1,6 @@
 {
-  "name": "mcp-oauth-proxy",
-  "version": "0.0.0",
+  "name": "@allardy/mcp-oauth-proxy",
+  "version": "0.1.0",
   "description": "OAuth bearer-token wrapper for HTTP-transport MCP servers. Resource-server only; bring your own OIDC provider.",
   "keywords": [
     "mcp",
@@ -21,6 +21,9 @@
   ],
   "type": "module",
   "main": "dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/index.ts",

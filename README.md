@@ -48,11 +48,11 @@ docker run --rm -p 8080:8080 \
 ### As an npm package (programmatic)
 
 ```bash
-pnpm add mcp-oauth-proxy
+pnpm add @allardy/mcp-oauth-proxy
 ```
 
 ```ts
-import { buildApp } from 'mcp-oauth-proxy'
+import { buildApp } from '@allardy/mcp-oauth-proxy'
 
 const app = buildApp({
   /* ...same shape as env vars... */
