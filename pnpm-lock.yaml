@@ -23,6 +23,13 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+    optionalDependencies:
+      '@oxfmt/binding-linux-x64-gnu':
+        specifier: ^0.51.0
+        version: 0.51.0
+      '@oxlint/binding-linux-x64-gnu':
+        specifier: ^1.66.0
+        version: 1.66.0
     devDependencies:
       '@oxfmt/binding-win32-x64-msvc':
         specifier: ^0.51.0
@@ -475,7 +482,6 @@ packages:
   '@oxfmt/binding-win32-x64-msvc@0.51.0':
     resolution: {integrity: sha512-73RqdAuVKQTkjZIDw08JaDHUM4lav5Qu+CaPwg4QbbA7k8o7LEW0p3UsfZ/F8dsO/pwVYh3RzFcanwLRTTahbQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
-    cpu: [x64]
     os: [win32]
 
   '@oxlint/binding-android-arm-eabi@1.66.0':
@@ -589,7 +595,6 @@ packages:
   '@oxlint/binding-win32-x64-msvc@1.66.0':
     resolution: {integrity: sha512-/DbBvw8UFBhja6PqudUjV4UtfsJr0Oa7jUjWVKB0g86lj/VwnPrkngn0sFql3c9RDA0O16dh7ozsXb6GjNAzBQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
-    cpu: [x64]
     os: [win32]
 
   '@paralleldrive/cuid2@2.3.1':

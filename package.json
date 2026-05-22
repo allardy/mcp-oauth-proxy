@@ -40,6 +40,10 @@
     "pino": "^9.5.0",
     "zod": "^4.4.3"
   },
+  "optionalDependencies": {
+    "@oxfmt/binding-linux-x64-gnu": "^0.51.0",
+    "@oxlint/binding-linux-x64-gnu": "^1.66.0"
+  },
   "devDependencies": {
     "@oxfmt/binding-win32-x64-msvc": "^0.51.0",
     "@oxlint/binding-win32-x64-msvc": "^1.66.0",
