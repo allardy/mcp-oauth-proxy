@@ -21,6 +21,7 @@ describe('mcp-oauth-proxy integration', () => {
       allowGroups: [],
       upstreamUrl: upstream.url,
       rateLimitRpm: 600,
+      allowOrigins: [],
     })
   })
 

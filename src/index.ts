@@ -1,6 +1,7 @@
 import express, { type Express } from 'express'
 import { loadConfig } from './config.js'
 import { createAuthMiddleware } from './auth-middleware.js'
+import { createCorsMiddleware } from './cors.js'
 import { mountDiscovery } from './discovery.js'
 import { mountProxy } from './proxy.js'
 import { createRateLimiter } from './rate-limit.js'
@@ -16,9 +17,13 @@ const buildApp = (opts: {
   allowGroups: string[]
   upstreamUrl: string
   rateLimitRpm: number
+  allowOrigins: string[]
 }): Express => {
   const app = express()
   app.disable('x-powered-by')
+
+  // CORS must run before auth so OPTIONS preflights short-circuit cleanly.
+  app.use(createCorsMiddleware({ allowOrigins: opts.allowOrigins }))
 
   mountDiscovery(app, { issuerUrl: opts.issuerUrl, resourceUrl: opts.resourceUrl })
 
@@ -77,6 +82,7 @@ const main = async () => {
     allowGroups: config.allowGroups,
     upstreamUrl,
     rateLimitRpm: config.rateLimitRpm,
+    allowOrigins: config.allowOrigins,
   })
 
   const server = app.listen(config.port, () => {

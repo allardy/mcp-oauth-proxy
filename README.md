@@ -62,20 +62,21 @@ app.listen(8080)
 
 ## Configuration
 
-| Variable           | Required     | Description                                                                                 |
-| ------------------ | ------------ | ------------------------------------------------------------------------------------------- |
-| `OIDC_ISSUER_URL`  | yes          | OIDC discovery URL (anything ending in / where /.well-known/openid-configuration resolves). |
-| `OIDC_AUDIENCE`    | yes          | Expected `aud` claim.                                                                       |
-| `RESOURCE_URL`     | yes          | This proxy's public URL. Used in the protected-resource discovery doc.                      |
-| `ALLOW_SUBS`       | one of these | Comma-separated allow-list of token `sub` values.                                           |
-| `ALLOW_EMAILS`     |              | Comma-separated allow-list of token `email` values.                                         |
-| `ALLOW_GROUPS`     |              | Comma-separated allow-list of token `groups` claim values.                                  |
-| `MCP_UPSTREAM_URL` | xor          | Existing HTTP MCP to proxy to.                                                              |
-| `MCP_SPAWN_CMD`    | xor          | Command to spawn as a child process.                                                        |
-| `MCP_SPAWN_PORT`   | with cmd     | Port the spawned MCP listens on.                                                            |
-| `PORT`             | no           | Default 8080.                                                                               |
-| `LOG_LEVEL`        | no           | `trace` to `fatal`. Default `info`.                                                         |
-| `RATE_LIMIT_RPM`   | no           | Per-`sub` rate limit. Default 60.                                                           |
+| Variable             | Required     | Description                                                                                                                     |
+| -------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| `OIDC_ISSUER_URL`    | yes          | OIDC discovery URL (anything ending in / where /.well-known/openid-configuration resolves).                                     |
+| `OIDC_AUDIENCE`      | yes          | Expected `aud` claim.                                                                                                           |
+| `RESOURCE_URL`       | yes          | This proxy's public URL. Used in the protected-resource discovery doc.                                                          |
+| `ALLOW_SUBS`         | one of these | Comma-separated allow-list of token `sub` values.                                                                               |
+| `ALLOW_EMAILS`       |              | Comma-separated allow-list of token `email` values.                                                                             |
+| `ALLOW_GROUPS`       |              | Comma-separated allow-list of token `groups` claim values.                                                                      |
+| `MCP_UPSTREAM_URL`   | xor          | Existing HTTP MCP to proxy to.                                                                                                  |
+| `MCP_SPAWN_CMD`      | xor          | Command to spawn as a child process.                                                                                            |
+| `MCP_SPAWN_PORT`     | with cmd     | Port the spawned MCP listens on.                                                                                                |
+| `PORT`               | no           | Default 8080.                                                                                                                   |
+| `LOG_LEVEL`          | no           | `trace` to `fatal`. Default `info`.                                                                                             |
+| `RATE_LIMIT_RPM`     | no           | Per-`sub` rate limit. Default 60.                                                                                               |
+| `CORS_ALLOW_ORIGINS` | no           | Comma-separated allowed browser origins for CORS. Default: `https://claude.ai,https://claude.com`. Use `*` to allow any origin. |
 
 ## Security model
 

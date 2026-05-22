@@ -51,4 +51,14 @@ describe('loadConfig', () => {
     expect(config.port).toBe(9000)
     expect(config.rateLimitRpm).toBe(120)
   })
+
+  it('parses CORS_ALLOW_ORIGINS env var', () => {
+    const config = loadConfig({ ...baseEnv, CORS_ALLOW_ORIGINS: 'https://claude.ai,https://app.example.com' })
+    expect(config.allowOrigins).toEqual(['https://claude.ai', 'https://app.example.com'])
+  })
+
+  it('defaults CORS allow-origins to claude.ai and claude.com', () => {
+    const config = loadConfig(baseEnv)
+    expect(config.allowOrigins).toEqual(['https://claude.ai', 'https://claude.com'])
+  })
 })

@@ -20,6 +20,7 @@ const envSchema = z
     PORT: z.coerce.number().int().positive().default(8080),
     LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
     RATE_LIMIT_RPM: z.coerce.number().int().positive().default(60),
+    CORS_ALLOW_ORIGINS: z.string().optional(),
   })
   .refine((env) => csv(env.ALLOW_SUBS).length + csv(env.ALLOW_EMAILS).length + csv(env.ALLOW_GROUPS).length > 0, {
     message: 'at least one of ALLOW_SUBS, ALLOW_EMAILS, ALLOW_GROUPS must be set',
@@ -44,6 +45,7 @@ export type Config = {
   port: number
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
   rateLimitRpm: number
+  allowOrigins: string[]
 }
 
 export const loadConfig = (env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env): Config => {
@@ -68,5 +70,8 @@ export const loadConfig = (env: NodeJS.ProcessEnv | Record<string, string | unde
     port: parsed.PORT,
     logLevel: parsed.LOG_LEVEL,
     rateLimitRpm: parsed.RATE_LIMIT_RPM,
+    allowOrigins: parsed.CORS_ALLOW_ORIGINS
+      ? csv(parsed.CORS_ALLOW_ORIGINS)
+      : ['https://claude.ai', 'https://claude.com'],
   }
 }
