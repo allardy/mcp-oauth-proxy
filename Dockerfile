@@ -1,17 +1,17 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:20-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+RUN npm install -g corepack@0.36.0 && corepack enable && corepack prepare pnpm@9.12.0 --activate
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.json ./
 COPY src ./src
 RUN pnpm build
 
-FROM node:20-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate \
+RUN npm install -g corepack@0.36.0 && corepack enable && corepack prepare pnpm@9.12.0 --activate \
   && addgroup -S app && adduser -S -G app app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod && pnpm store prune

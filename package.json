@@ -47,7 +47,7 @@
     "@oxfmt/binding-win32-x64-msvc": "^0.51.0",
     "@oxlint/binding-win32-x64-msvc": "^1.66.0",
     "@types/express": "^5.0.6",
-    "@types/node": "^25.6.0",
+    "@types/node": "^26.6.5",
     "@types/supertest": "^6.0.2",
     "oxfmt": "^0.51.0",
     "oxlint": "^1.66.0",
